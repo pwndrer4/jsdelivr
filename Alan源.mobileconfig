@@ -5,7 +5,7 @@
 	<key>ConsentText</key>
 	<dict>
 		<key>default</key>
-		<string>Alan源官网</string>
+		<string>Alan源官网APP</string>
 	</dict>
 	<key>PayloadContent</key>
 	<array>
@@ -793,7 +793,7 @@
 			<key>IsRemovable</key>
 			<true/>
 			<key>Label</key>
-			<string>Alan源</string>
+			<string>Alan源官网APP</string>
 			<key>PayloadDescription</key>
 			<string>配置 Web Clip 设置</string>
 			<key>PayloadDisplayName</key>
