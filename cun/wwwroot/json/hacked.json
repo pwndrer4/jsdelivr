@@ -1,0 +1,40 @@
+[
+    {
+        "name": "官方QQ群",
+        "icon": "https://app.eonhubapp.com/img/tappedout.jpg",
+        "plist": "https://qm.qq.com/cgi-bin/qm/qr?k=vPVqyEA7Slh4ZZixREhWBx_y0R1BP7aW&authKey=vmpq4uMRjTEwiyxCHP9HVHnrcfsiV372iUQlDbLE4966ef8W4xtT0p8v0gZ+u/Lb",
+        "size": "43.3",
+        "hack": "Unlimited Donuts"
+    },
+    {
+        "name": "Cydia越狱源",
+        "icon": "https://app.eonhubapp.com/img/geometrydash.png",
+        "plist": "https://apt.pwndrer4.xyz/",
+        "size": "94.6",
+        "hack": "Texture Pack"
+    }
+    ,
+    {
+        "name": "捐助我们",
+        "icon": "https://app.eonhubapp.com/img/geometrydash.png",
+        "plist": "https://qr.alipay.com/fkx03965gashr09dztvn36f",
+        "size": "94.6",
+        "hack": "Texture Pack"
+    }
+    ,
+    {
+        "name": "联系站长",
+        "icon": "https://app.eonhubapp.com/img/geometrydash.png",
+        "plist": "mqqwpa://im/chat?chat_type=wpa&uin=2648616832&version=1&src_type=web&web_src=lvlingseeds.com",
+        "size": "94.6",
+        "hack": "Texture Pack"
+    }
+    ,
+    {
+        "name": "官方邮箱",
+        "icon": "https://app.eonhubapp.com/img/geometrydash.png",
+        "plist": "mailto:2648616832@qq.com",
+        "size": "94.6",
+        "hack": "Texture Pack"
+    }
+]

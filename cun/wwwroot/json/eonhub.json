@@ -1,0 +1,14 @@
+[
+    {
+        "name": "福利应用合集",
+        "icon": "https://app.ambier.cn/upload/portal/20200323/967a55403c9dc92b4a2c2ff51e2a3120.png",
+        "plist": "sileo.ga/tiaozhuan.php",
+        "size": "70"
+    },
+  {
+        "name": "乐网",
+        "icon": "https://app.ambier.cn/upload/portal/20200323/967a55403c9dc92b4a2c2ff51e2a3120.png",
+        "plist": "alancs.lanzous.com/i66l36h",
+        "size": "70"
+    }
+]

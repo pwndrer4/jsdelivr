@@ -1,0 +1,50 @@
+[
+	{
+        "name": "Checkra1n版本大全",
+        "icon": "https://pwndrer4.gitee.io/jb/image/CheckRa1n.png",
+        "plist": "https://www.lanzous.com/b00na7u4f",
+        "size": "20"
+    },
+    {
+        "name": "Electra",
+        "icon": "https://pwndrer4.gitee.io/jb/image/Electra.png",
+        "plist": "itms-services://?action=download-manifest&url=https://pwndrer4.gitee.io/jb/plist/11.0-11.41.plist",
+        "size": "20"
+    },
+    {
+        "name": "Meridian",
+        "icon": "https://pwndrer4.gitee.io/jb/image/Meridian.png",
+        "plist": "itms-services://?action=download-manifest&url=https://pwndrer4.gitee.io/jb/plist/10x.plist",
+        "size": "67.4"
+    },
+    {
+        "name": "yalu102",
+        "icon": "https://pwndrer4.gitee.io/jb/image/yalu102.png",
+        "plist": "itms-services://?action=download-manifest&url=https://pwndrer4.gitee.io/jb/plist/10.2.plist",
+        "size": "16"
+    },
+    {
+        "name": "h3lix",
+        "icon": "https://app.ambier.cn/upload/portal/20200323/7e5879f6c76852f7eb842d658521228f.png",
+        "plist": "intromaker++",
+        "size": "54.7"
+    },
+    {
+        "name": "Th0r",
+        "icon": "https://pwndrer4.gitee.io/jb/image/Th0r.png",
+        "plist": "itms-services://?action=download-manifest&url=https://pwndrer4.gitee.io/jb/plist/Th0r.plist",
+        "size": "133"
+    },
+    {
+        "name": "乐网",
+        "icon": "https://pwndrer4.gitee.io/jb/image/%E4%B9%90%E7%BD%91.png",
+        "plist": "https://alancs.lanzous.com/i66l36h",
+        "size": "54.5"
+    },
+    {
+        "name": "doubleh3lix",
+        "icon": "https://app.ambier.cn/upload/portal/20200323/0a87be246a6e9216d0dd08a37ee516eb.png",
+        "plist": "itms-services://?action=download-manifest&url=https://pwndrer4.gitee.io/jb/plist/10.33.plist",
+        "size": "20"
+    }
+]
