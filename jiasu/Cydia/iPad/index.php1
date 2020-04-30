@@ -1,0 +1,801 @@
+
+<?php
+/**
+ * DCRM Mobile Page
+ *
+ * This file is part of WEIPDCRM.
+ * 
+ * WEIPDCRM is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * WEIPDCRM is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with WEIPDCRM.  If not, see <http://www.gnu.org/licenses/>.
+ */
+require_once('../../system/common.inc.php');
+
+base_url();
+
+// URL For Rewrite 
+$rewrite_mod = get_option('rewrite_mod');
+switch($rewrite_mod){
+	case 3:
+		$rewrite_url = array('view' => 'view/%d', 'view_nohistory' => 'view/%d/nohistory', 'screenshot' => 'screenshot/%d', 'history' => 'history/%d', 'contact' => 'contact/%d', 'section' => '../section/%d', 'report' => 'report/%d', 'report_support' => 'report/%1$d/%2$d', 'more' => 'more/%d', 'more_offset' => 'more/%1$d/%2$d', 'misc' => 'misc');
+		break;
+	case 1:
+	case 2:
+	default:
+		$rewrite_url = array('view' => 'index.php?method=view&amp;pid=%d', 'view_nohistory' => 'index.php?pid=%d&amp;addr=nohistory', 'screenshot' => 'index.php?method=screenshot&amp;pid=%d', 'history' => 'index.php?method=history&amp;pid=%d', 'contact' => 'index.php?method=contact&amp;pid=%d', 'section' => 'index.php?method=section&amp;pid=%d', 'report' => 'index.php?method=report&amp;pid=%d', 'report_support' => 'index.php?method=report&amp;pid=%1$d&amp;support=%2$d', 'more' => 'index.php?method=more&amp;pid=%d', 'more_offset' => 'index.php?method=more&amp;pid=%1$d&amp;offset=%2$d', 'misc' => 'misc.php');
+		break;
+}
+function echo_rewrite_url($type, $variable1, $variable2=''){
+	global $rewrite_url;
+	echo SITE_URL;
+	printf($rewrite_url[$type], $variable1, $variable2);
+}
+
+class_loader('Mobile_Detect');
+$detect = new Mobile_Detect;
+if(!$detect->isiOS()){
+	if (DCRM_PCINDEX == 1) {
+		header("Location: ".SITE_URL.$rewrite_url['misc']);
+		exit();
+	} else {
+		$isCydia = false;
+	}
+} else {
+	if (DCRM_MOBILE == 2) {
+		if (!strpos($detect->getUserAgent(), 'Cydia')) {
+			$isCydia = false;
+		} else {
+			$isCydia = true;
+		}
+	} else {
+		exit('Access Denied');
+	}
+}
+if (file_exists('Release')) {
+	$release = file('Release');
+	$release_origin = __('No Name');
+	$release_mtime = filemtime('Release');
+	$release_time = date('Y-m-d H:i:s',$release_mtime);
+	foreach ($release as $line) {
+		if(preg_match('#^Origin#', $line)) {
+			$release_origin = trim(preg_replace("#^(.+):\\s*(.+)#","$2", $line));
+		}
+		if(preg_match("#^Description#", $line)) {
+			$release_description = trim(preg_replace("#^(.+):\\s*(.+)#","$2", $line));
+		}
+	}
+} else {
+	$release_origin = __('Empty Page');
+}
+if (isset($_GET['pid'])) {
+	if (ctype_digit($_GET['pid']) && intval($_GET['pid']) <= 10000) {
+		function device_check(){
+			global $detect;
+			$device_type = array('iPhone', 'iPod', 'iPad');
+			for ($i = 0; $i < count($device_type); $i++) {
+				$check = $detect->version($device_type[$i]);
+				if ($check !== false) {
+					if (isset($_SERVER['HTTP_X_MACHINE'])) {
+						$DEVICE = $_SERVER['HTTP_X_MACHINE'];
+					} else {
+						$DEVICE = 'Unknown';
+					}
+					$OS = str_replace('_', '.', $check);
+					break;
+				}
+			}
+			return array('DEVICE' => $DEVICE, 'OS' => $OS);
+		}
+
+		if (isset($_GET['method']) && $_GET['method'] == 'screenshot') {
+			$index = 2;
+			$title = __('View Screenshots');
+		} elseif (isset($_GET['method']) && $_GET['method'] == 'report') {
+			$device_info = device_check();
+			if (!isset($_GET['support'])) {
+				$index = 3;
+			} else {
+				if ($_GET['support'] == '1') {
+					$support = 1;
+				} elseif ($_GET['support'] == '2') {
+					$support = 2;
+				} elseif ($_GET['support'] == '3') {
+					$support = 3;
+				} else {
+					$support = 0;
+				}
+				$index = 4;
+			}
+			$title = __('Report Problems');
+		} elseif (isset($_GET['method']) && $_GET['method'] == 'history') {
+			$index = 5;
+			$title = __('Version History');
+		} elseif (isset($_GET['method']) && $_GET['method'] == 'contact') {
+			$index = 6;
+			$title = __('Contact us');
+		} elseif (isset($_GET['method']) && $_GET['method'] == 'section') {
+			$index = 7;
+			$title = __('Package Category');
+		} elseif (isset($_GET['method']) && $_GET['method'] == 'more') {
+			$index = 8;
+			$section = DB::fetch_first("SELECT `Name`, `Icon` FROM `".DCRM_CON_PREFIX."Sections` WHERE `ID` = '".(int)$_GET['pid']."'");
+			$q_name = DB::real_escape_string($section['Name']);
+			if (isset($_GET['offset']) && !empty($_GET['offset']) && ctype_digit($_GET['offset'])) {
+				$offset = intval($_GET['offset']);
+			} else {
+				$offset = 0;
+			}
+			$packages = DB::fetch_all("SELECT `ID`, `Name`, `Package` FROM `".DCRM_CON_PREFIX."Packages` WHERE (`Stat` = '1' AND `Section` = '".$q_name."') ORDER BY `ID` DESC LIMIT 10 OFFSET ".$offset);
+			foreach($packages as $package){
+				if(!empty($package)){
+					if ($isCydia) { ?>
+				<a href="cydia://package/<?php echo($package['Package']); ?>" target="_blank">
+<?php					} else { ?>
+				<a href="<?php echo_rewrite_url('view', $package['ID']);?>">
+<?php					} ?>
+					<img class="icon" src="<?php echo(SITE_URL); ?>icon/<?php echo(empty($section['Icon']) ? 'default/unknown.png' : $section['Icon']); ?>">
+					<div>
+						<div>
+							<label>
+								<p><?php echo($package['Name']); ?></p>
+							</label>
+						</div>
+					</div>
+				</a>
+<?php
+				}
+			}
+			exit();
+		} elseif (!isset($_GET['method']) || (isset($_GET['method']) && $_GET['method'] == 'view')) {
+			$index = 1;
+			$title = __('View Package');
+			$package_id = (int)DB::real_escape_string($_GET['pid']);
+			$package_info = DB::fetch_first("SELECT `Name`, `Version`, `Author`, `Package`, `Description`, `DownloadTimes`, `Multi`, `CreateStamp`, `Size`, `Installed-Size`, `Section`, `Homepage`, `Tag`, `Level`, `Price`, `Purchase_Link`, `Changelog`, `Changelog_Older_Shows`, `Video_Preview`, `System_Support`, `ScreenShots` FROM `".DCRM_CON_PREFIX."Packages` WHERE `ID` = '".$package_id."' LIMIT 1");
+			if ($package_info) $title = $title.' - '.$package_info['Name'];
+		} else {
+			httpinfo(405);
+			exit();
+		}
+	} else {
+		httpinfo(405);
+		exit();
+	}
+} elseif (!isset($_GET['method'])) {
+	$index = 0;
+	$title = $release_origin;
+} else {
+	httpinfo(405);
+	exit();
+}
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Cydia首页</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="apple-mobile-web-app-title" content="<?php echo($release_origin); ?>" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<meta name="HandheldFriendly" content="true" />
+		<meta name="format-detection" content="telephone=no" />
+		<meta name="robots" content="index, follow" />
+          <script type="text/javascript" src="../style.js"></script>
+	<!--link rel="stylesheet" type="text/css" href="style.css"-->
+      		<link rel="stylesheet" href="../menes.min.css">
+		<link rel="stylesheet" href="../scroll.min.css">
+      		<script src="../menes.js" type="text/javascript"></script>
+<script src="../udidhq.js"type="text/javascript"></script>
+		<script src="../jquery.min.js"></script>
+<script src="../../js/2_clipboard.min.js" type="text/javascript"></script>
+
+
+
+
+	
+
+   
+
+<?php
+if (defined("AUTOFILL_SEO")) {
+?>
+		<meta name="title" content="<?php echo(AUTOFILL_SEO); ?>" />
+<?php
+}
+if (!empty($release_description)) {
+?>
+		<meta name="description" content="<?php echo($release_description); ?>" />
+<?php
+}
+if (defined("AUTOFILL_KEYWORDS")) {
+?>
+		<meta name ="keywords" content="<?php echo(AUTOFILL_KEYWORDS); ?>" />
+<?php
+}
+if ($isCydia) {
+?>
+		<base target="_blank">
+<?php
+} else {
+?>
+		<base target="_top">
+<?php
+}
+?>
+</head>
+   
+<body class="pinstripe" >
+
+    <div style="height:2px;width:100%">
+        <div style="background-color:red;height:2px;width:0" id="progress"></div>
+    </div>
+    <panel class="left">
+        <div style="margin:9px;padding:0 16px">
+
+            <style type="text/css">.cytyle-faux #logo {
+                    background-image: url("../CydiaIcon.png");
+                    background-size: 59px 60px;
+                    width: 59px
+                }
+                
+                .cytyle-flat #logo {
+                    background-image: url("../CydiaIcon.png");
+                    background-size: 64px 60px;
+                    width: 64px
+                }
+            </style>
+              <script type="text/javascript">
+        if (navigator.userAgent.search(/Cydia/) != -1) {
+            var title = document.title;
+            var dot = title.indexOf('·');
+            if (dot != -1)
+                document.title = title.substring(0, dot);
+        }
+    </script>
+<script>
+        if((/(ipad)/i).test(window.navigator.userAgent)){
+            window.location.href = 'https://cs.nuosike.cn/Cydia/iPad';
+        }
+</script>
+            <div id="logo" style="position:absolute;display:inline-block;height:60px;vertical-align:middle" alt="Cydia Logo"></div>
+            <p style="padding-top:8px;margin-left:70px;text-align:center;display:block;height:60px;text-rendering:optimizeLegibility">
+            <span style="font-size:18px">欢迎使用 Cydia<sup>™</sup></span><br>
+            <span style="font-size:14px"><a>by <?php echo(AUTOFILL_SEO); ?><sup>™</sup></a></span></p>
+        </div>
+
+        <fieldset class="half">
+            <a href="../gzh.html"  ><img class="icon" src="../../manage/Speed/icon/dh5.png">
+                <div>
+                    <div><label><p>公众微信</p></label></div>
+                </div>
+            </a>
+		</fieldset>
+        <fieldset class="more">
+            <a href="https://jq.qq.com/?_wv=1027&k=5seVbRh" ><img class="icon" src="../../manage/Speed/icon/dh6.png">
+                <div>
+                    <div><label><p>官方Q群</p></label></div>
+                </div>
+            </a>
+        </fieldset>
+		<fieldset class="half">
+            <a href="../../Donation.php" ><img class="icon" src="../../manage/Speed/icon/dh3.png">
+                <div>
+                    <div><label><p>捐助排行</p></label></div>
+                </div>
+            </a>
+        </fieldset>
+      
+        <fieldset class="more">
+            <a href="javascript:void(0)" onclick="dashangToggle()" >
+              <img class="icon" src="../../manage/Speed/icon/dh8.png">
+                <div>
+                  <div>
+                      <label>
+                        <p>捐助我们</p>
+                      </label>
+                  </div>
+                </div>
+            </a>
+             
+          <div class="hide_box" style="display: none;"></div>
+    <div class="shang_box" style="display: none;">
+    	<a class="shang_close  cytyle-dn  cytyle-dn  cytyle-dn" href="javascript:void(0)" onclick="dashangToggle()" title="关闭"><img src="../../icons/close.jpg" alt="取消"></a>
+        <img class="shang_logo" src="../../icons/logos.png" alt="Cydia插件推送源">
+    	<div class="shang_tit">
+    		<p>感谢捐助，您所捐助的资金将用于源维护。</p>
+    	</div>
+    	<div class="shang_payimg">
+    		<img src="../../icons/weipayimg.jpg" alt="扫码支持我们" title="扫一扫">
+    	</div>
+    		<div class="pay_explain">扫码打赏，你说多少就多少</div>
+    	<div class="shang_payselect">
+    		<div class="pay_item checked" data-id="weipay">
+	    		<span class="radiobox"></span>
+	    		<span class="pay_logo"><img src="../../icons/wechat.jpg" alt="微信"></span>
+    	    </div>
+    		<div class="pay_item" data-id="alipay">
+			    <a href="HTTPS://QR.ALIPAY.COM/FKX09997WGZHCWCE1HHIEE" target="_blank" class=" cytyle-dn">
+	    		<span class="radiobox"></span>
+	    		<span class="pay_logo"><img src="../../icons/alipay.jpg" alt="支付宝"></span>
+				</a>
+    		</div>
+    	</div>
+    	<div class="shang_info">
+    		<p>保存截图，打开<span id="shang_pay_txt">微信</span>扫一扫，即可进行扫码打赏哦</p>
+    		<p><a href="https://cs.nuosike.cn/" target="_blank" title="Cydia插件推送源">Cydia插件推送源</a> | 分享从这里开始，精彩与您同在</p>
+    	</div>
+    </div>
+        </fieldset>
+      
+
+      
+
+          <fieldset>
+            <a href="http://ssr.cydia.ltd" target="_blank"><img class="icon" src="../../manage/Speed/icon/dh9.png">
+                <div>
+                    <div><label><p>V计划</p></label></div>
+                </div>
+            </a>
+        </fieldset>
+      
+      
+           <fieldset>	           
+<ul class="doubleCol">                  
+             <li class="borderRight">
+            <a href="../../ios9.php" arget="_blank" class="">
+              <div class="test1">
+              <img class="icon" src="../ios9.png">
+                <div>
+                    <div>
+                      <label>
+                        <p>IOS9分类</p>
+                      </label>
+                   </div>
+                </div> 
+              </div>
+            </a>
+             </li>
+  
+             <li class="borderRight">
+            <a href="../../ios10.php" arget="_blank" class="">
+              <div class="test1">
+              <img class="icon" src="../ios10.png">
+                <div>
+                    <div>
+                      <label>
+                        <p>IOS10分类</p>
+                      </label>
+                   </div>
+                </div> 
+              </div>
+            </a>
+             </li> 
+  </ul>
+
+        
+				<a href="../../ios11.php" target="_blank">
+				<img class="icon" src="../ios11.png" />
+					<div>
+						<div>
+							<label>
+								<p>iOS11分类 施工中🚧</p>
+								<span style="color: #6e6d6d; float:right;">
+									<l style="font-size: 8px;">
+										随时回来看看👻<br/>
+										资源不断添加中...
+									</l>
+								</span>
+							</label>
+						</div>
+					</div>
+				</a>
+				<a href="../../Sections1.php" target="_blank">
+				<img class="icon" src="../ios.png" />
+					<div>
+						<div>
+							<label>
+								<p>IOS应用插件归类🚧</p>
+								<span style="color: #6e6d6d; float:right;">
+									<l style="font-size: 8px;">
+										随时回来看看👻<br/>
+										资源不断添加中...
+									</l>
+								</span>
+							</label>
+						</div>
+					</div>
+				</a>
+			</fieldset>
+
+<?php
+require_once ('../../qqlogin/function.php');
+require_once ('../../qqlogin/Connect2.1/qqConnectAPI.php');
+?>                  
+<?php if(!isset($_SESSION["accesstoken"]) || !isset($_SESSION["openid"])) { ?>
+       <fieldset> 
+		      <a>
+				<img class="icon" src="../../icon/sc.png">
+				<div>
+                      <div>
+                         <label>
+                            <p>登录会员中心</p>
+                           <span class="ui-btn3" id="isbookmark" style="float:right;"><span onclick="cookipost2()" style="color: #808080;">登录</span></span>
+                         </label>
+                      </div>
+                    </div>
+	  </a> 
+   
+    </fieldset>
+ <script language="javascript">
+    function cookipost2(){
+      parent.location.href='../../qqlogin/qqlogin.php';
+ 
+	}
+</script>
+<?php } else { 
+    $qc = new QC($_SESSION["accesstoken"],$_SESSION["openid"]);
+    $arr = $qc->get_user_info();           
+?>  
+       <fieldset> 
+                      <a>
+                        <img class="icon" src="<?php echo $arr['figureurl_qq_2'];?>" style="border-radius: 50%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;">
+                            <div>
+                                <div>
+                                      <label>
+                                        <p>用户名：<?php echo $arr["nickname"];?></p><i onclick="cookipost()" class="ui-btn3" style="color: #979797; float:right;">退出</i>
+                                    </label>
+                                </div>
+                            </div>
+                      </a>
+                      <a href="../../favourite.php">
+				        <img class="icon" src="../../icon/user.png">
+					      <div>
+						    <div>
+						      <p>会员个人中心</p>
+						    </div>
+					      </div>
+				      </a> 
+          </fieldset>
+ <script language="javascript">
+    function cookipost(){
+      $.get("../../qqlogin/qqlogout.php", function(result){
+    	location.reload();
+        alert('退出账户');
+  	  });  
+	}
+</script>
+<?php
+ }           
+?>                   
+      
+<?php 
+if(isset($_SESSION['accesstoken']) || isset($_SESSION['openid'])) {      
+$User=$arr["nickname"];
+$Logo=$arr['figureurl_2'];
+$Openid=$_SESSION['openid'];
+$date=date("Y-m-d h:i:s");     
+$servername = "localhost";
+$username = "lovecydia";
+$password = "lovecydia";
+$dbname = "lovecydia";   
+$conn2 = new mysqli($servername, $username, $password, $dbname);
+// 检测连接
+if ($conn->connect_error) {
+    die("连接失败: " . $conn->connect_error);
+} 
+ $ip = ($ip) ? $ip : $_SERVER["REMOTE_ADDR"];  
+$date=date("Y-m-d h:i:s");   
+if($row=DB::result_first("SELECT `Openid` FROM `apt_User` WHERE `Openid`='".$_SESSION['openid']."'" )){  
+
+}else{  
+$sql2 = "INSERT INTO apt_User (ID,User,Logo,Openid,Packages,TimeStamp,IP) VALUES ('','$User','$Logo','$Openid','','$date','$ip')";  
+if ($conn2->query($sql2) === TRUE) {
+} 
+} 
+   }
+?>     
+  
+
+      
+<!-- <label><p>软件分类</p></label>              
+        <fieldset>
+<?php
+	if (DCRM_SHOWLIST == 2) {
+		$sections = DB::fetch_all("SELECT `ID`, `Name`, `Icon` FROM `".DCRM_CON_PREFIX."Sections`");
+		if (empty($sections)) {
+?>
+			<block>
+				<p>
+					<?php _e('No Section.'); ?>
+				</p>
+			</block>
+<?php
+		} else {
+			foreach($sections as $section){
+?>
+
+
+        <a href="<?php echo_rewrite_url('section', $section['ID']); ?>" >
+            <img src="./recent.png" class="icon" />
+                <div>
+                    <div>
+                        <label><?php echo($section['Name']); ?></label>
+                    </div>
+                </div>
+        </a>
+<?php
+		} }}
+?>              
+-->
+
+        </fieldset>  
+  
+  <script src="../../icon/gd/js/msc.js"></script>
+<link rel="stylesheet" href="../../icon/gd/css/gd.css">
+<block  style="background-color:#ffffff">
+		<a href="https://udid.cydia.love" target="_open"><p id="name"><img src="../../icon/gd/applogo.png" width="100%"></p>
+ 	<div class="one">
+       <ul style="left: -254.4px;">
+       <li><img src="../../icon/gd/a1.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+       <li><img src="../../icon/gd/a2.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+       <li><img src="../../icon/gd/a3.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+       <li><img src="../../icon/gd/a4.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+       <li><img src="../../icon/gd/a5.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+       <li><img src="../../icon/gd/a6.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+       <li><img src="../../icon/gd/a7.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+       <li><img src="../../icon/gd/a8.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+       <li><img src="../../icon/gd/a9.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+       <li><img src="../../icon/gd/a10.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+       <li><img src="../../icon/gd/a11.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+	   <li><img src="../../icon/gd/a12.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+       <li><img src="../../icon/gd/a1.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+	   <li><img src="../../icon/gd/a2.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+	   <li><img src="../../icon/gd/a3.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+	   <li><img src="../../icon/gd/a4.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+	   <li><img src="../../icon/gd/a5.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+	   <li><img src="../../icon/gd/a6.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+	   <li><img src="../../icon/gd/a7.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+	   <li><img src="../../icon/gd/a8.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+	   <li><img src="../../icon/gd/a9.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+	   <li><img src="../../icon/gd/a10.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+	   <li><img src="../../icon/gd/a11.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+	   <li><img src="../../icon/gd/a12.png" style="border-radius: 12%;box-shadow:0 0 1px #AAA;padding:1px;margin-right: 1px;"></li>
+	   </ul>
+	</div></a>
+</block>           
+  
+  
+        <label><p>最近更新的插件</p></label>
+		<fieldset>
+                 
+<?php
+    
+				$packages = DB::fetch_all("SELECT `ID`, `DownloadTimes`, `Description`, `Name`, `Package` FROM `".DCRM_CON_PREFIX."Packages` WHERE (`Stat` = '1') ORDER BY `CreateStamp` DESC LIMIT " . DCRM_SHOW_NUM);
+				foreach($packages as $package) {
+?>
+          
+		<a href="cydia://package/<?php echo($package['Package']); ?>" target="_blank">
+            <img src="../recent.png" class="icon" />
+                <div>
+                    <div>
+                        <label><?php echo($package['Name']); ?></label>
+                    </div>
+                </div>
+          </a>
+
+             
+
+<?php
+    
+                                               }
+?>	
+
+     <a href="../../qb.php" target="_blank">
+            <img src="../recent.png" class="icon" />
+                <div>
+                    <div>
+                        <label>查看全部软件包</label>
+                    </div>
+                </div>
+        </a> 
+		</fieldset>
+              
+        <fieldset style="background-color:#eefff0" class="spots">
+            <a href="https://cydia.saurik.com/account"><img class="icon" src="../account.png">
+                <div>
+                    <div>
+	                    <label id="account"><p>管理账户</p></label>
+                    </div>
+                </div>
+            </a>
+        </fieldset>
+              
+        <fieldset>
+            <a href="../help">
+                <div>
+                    <div><label><p>升级和越狱帮助</p></label></div>
+                </div>
+            </a>
+            <a href="../Sections1.php">
+                <div>
+                    <div><label><p>为应用程序查找扩展</p></label></div>
+                </div>
+             </a>
+            <a href="https://cydia.saurik.com/sources.html">
+                <div>
+                    <div><label><p>更多软件源</p></label></div>
+                </div>
+            </a>
+        </fieldset>
+              
+		<label><p>用户指南</p></label>
+        <fieldset>
+            <a href="../../help/3.php">
+                <div>
+                    <div><label><p>常见问题</p></label></div>
+                </div>
+            </a>
+            <a href="https://cydia.saurik.com/copying.html">
+                <div>
+                    <div><label><p>设备文件拷贝</p></label></div>
+                </div>
+            </a>
+            <a href="../../help/4.php">
+                <div>
+                    <div><label><p>OpenSSH 访问教程</p></label></div>
+                </div>
+            </a>
+            <a href="cydia://package/com.cydia.love.sshpasswd">
+                <div>
+                    <div><label><p>Root 密码修改</p></label></div>
+                </div>
+            </a>
+            <a href="https://cydia.saurik.com/storage.html">
+                <div>
+                    <div><label><p>存储详情</p></label></div>
+                </div>
+            </a>
+        </fieldset><label><p>社区</p></label>
+        <fieldset>
+            <a href="//blog.cydia.love">
+              <img class="icon" src="../reddit.png" >
+                <div>
+                    <div><label><p>越狱博客</p></label></div>
+                </div>
+            </a>
+        </fieldset><label><p>开发者专区</p></label>
+        <fieldset>
+            <a href="https://cydia.saurik.com/faq/developing.html">
+                <div>
+                    <div><label><p>开发者常用资源</p></label></div>
+                </div>
+            </a>
+        </fieldset>
+        <fieldset>
+            <a href="https://cydia.saurik.com/credits.html">
+                <div>
+                    <div><label><p>致谢 / 感谢</p></label></div>
+                </div>
+            </a>
+            <a href="../../help/9.php">
+                <div>
+                    <div><label><p>免责声明</p></label></div>
+                </div>
+            </a>
+        </fieldset>
+        <footer>	
+    <p>   
+    </p>      
+    <p>
+<?php  
+require_once('iphone.php');  
+      $ip2 = ($ip) ? $ip : $_SERVER["REMOTE_ADDR"];               
+$curl="https://apis.map.qq.com/ws/location/v1/ip?ip=".$ip2."&key=P4ABZ-7Q4LO-GCZWP-SJL7X-Q42BF-QUBU3";
+$ch = curl_init();
+curl_setopt($ch,CURLOPT_URL,$curl);//提交到指定网页
+curl_setopt($ch,CURLOPT_HEADER,0);//设置header
+curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);//要求结果为字符串且输出到屏幕上
+$jsonInfo = curl_exec($ch);
+curl_close($ch);
+
+$myjson = json_decode($jsonInfo,true);
+    foreach ($myjson as $key => $value){
+        if(gettype($value) == 'array'){
+            $ip = $value['ip'];
+            $lng = $value['location']['lng'];
+            $lat = $value['location']['lat'];
+        }
+    }
+
+$curl="https://apis.map.qq.com/ws/geocoder/v1/?location=".$lat.",".$lng."&key=P4ABZ-7Q4LO-GCZWP-SJL7X-Q42BF-QUBU3&get_poi=1";
+$ch = curl_init();
+curl_setopt($ch,CURLOPT_URL,$curl);//提交到指定网页
+curl_setopt($ch,CURLOPT_HEADER,0);//设置header
+curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);//要求结果为字符串且输出到屏幕上
+$jsonInfo = curl_exec($ch);
+curl_close($ch);
+
+$myjson = json_decode($jsonInfo,true);
+    foreach ($myjson as $key => $value){
+        if(gettype($value) == 'array'){
+            $address = $value['address'];
+            $nation = $value['address_component']['nation'];
+            $location = $value['location']['lat'];
+        }
+    }
+?>        
+<span>您的设备型号:<?php echo getPhone();?>|您的系统版本:<?php echo getOS();?></span><hr>
+<span> Cydia版本:<?php echo determinebrowser ();?>|IP地址:<?php echo($_SERVER['REMOTE_ADDR'].'<br>IP地址位于:'.$nation.$address); ?>附近</span><hr>  
+<?php  
+
+function getOS()  
+{  
+    $ua = $_SERVER['HTTP_USER_AGENT'];//这里只进行IOS和Android两个操作系统的判断，其他操作系统原理一样  
+    if (strpos($ua, 'Android') !== false) {//strpos()定位出第一次出现字符串的位置，这里定位为0  
+        preg_match("/(?<=Android )[\d\.]{1,}/", $ua, $version);  
+        echo 'Platform:Android OS_Version:'.$version[0];  
+    } elseif (strpos($ua, 'iPhone') !== false) {  
+        preg_match("/(?<=CPU iPhone OS )[\d\_]{1,}/", $ua, $version);  
+        echo 'IOS'.str_replace('_', '.', $version[0]);  
+    } elseif (strpos($ua, 'iPad') !== false) {  
+        preg_match("/(?<=CPU OS )[\d\_]{1,}/", $ua, $version);  
+        echo 'IOS'.str_replace('_', '.', $version[0]);  
+    }   
+}  
+     
+?>   
+<?php
+function determinebrowser () {
+
+    $agent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '' ;
+    $browseragent = "";   //浏览器
+    $browserversion = ""; //浏览器的版本
+    if (preg_match('/360SE/i',$agent)) {
+        $browserversion = '';
+        $browseragent = "360浏览器";
+    } else if(preg_match('/Maxthon (([0-9_.]{1,2}+))/i',$agent,$version)){
+        $browserversion = $version[1];
+        $browseragent = "Maxthon";
+    }else if (preg_match('/MSIE (([0-9_.]{1,2})+)/i',$agent,$version)) {
+        $browserversion = $version[1];
+        $browseragent = "Internet Explorer";
+    } else if (preg_match( '/iOpera\/(([0-9_.]{1,2})+)/i',$agent,$version)) {
+        $browserversion = $version[1];
+        $browseragent = "Opera";
+    } else if (preg_match( '/Firefox\/(([0-9_.]{1,3})+)/i',$agent,$version)) {
+        $browserversion=$version[1];
+        $browseragent = "Firefox";
+    } else if (preg_match( '/QQ\/(([0-9_.]{1,5})+)/i',$agent,$version)) {
+        $browserversion = $version[1];
+        $browseragent = "QQ";
+    } else if (preg_match( '/Cydia\/(([0-9_.]{1,5})+)/',$agent,$version)) {
+        $browserversion = $version[1];
+        $browseragent = "Cydia";  
+    } else if (preg_match( '/Safari\/(([0-9_.]{1,5})+)/',$agent,$version)) {
+        $browserversion = $version[1];
+        $browseragent = "Safari";
+    } else {
+        $browserversion = "";
+        $browseragent = "Unknown";
+    }
+    return $browseragent." ".$browserversion;
+}
+
+ ?>      
+
+
+
+    </p>
+         
+</footer>
+</panel>
+</body>
+</html>

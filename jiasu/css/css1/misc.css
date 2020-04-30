@@ -1,0 +1,79 @@
+
+
+/**
+ * 按钮
+ */
+.ui-btn, .ui-btn-lg, .ui-btn-s {
+  height: 30px;
+  line-height: 30px;
+  padding: 0 11px;
+  min-width: 55px;
+  display: inline-block;
+  position: relative;
+  text-align: center;
+  font-size: 15px;
+  background-color: #e4525d;
+  border-radius: 5px; }
+  @media screen and (-webkit-min-device-pixel-ratio: 2) {
+    .ui-btn, .ui-btn-lg, .ui-btn-s {
+      position: relative;
+      border: 0; }
+      .ui-btn:before, .ui-btn-lg:before, .ui-btn-s:before {
+        content: "";
+        width: 200%;
+        height: 200%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        border: 2px solid #cacccd;
+        -webkit-transform: scale(0.5);
+        -webkit-transform-origin: 0 0;
+        padding: 1px;
+        -webkit-box-sizing: border-box;
+        border-radius: 8px;
+        pointer-events: none; } }
+.ui-list-function .ui-btn, .ui-list-function .ui-btn-lg, .ui-list-function .ui-btn-s {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  margin-top: -15px; }
+
+
+/**
+ * 按钮2
+ */
+.ui-btn2, .ui-btn-lg, .ui-btn-s {
+  height: 30px;
+  line-height: 30px;
+  padding: 0 11px;
+  min-width: 55px;
+  display: inline-block;
+  position: relative;
+  text-align: center;
+  font-size: 15px;
+  background-color: #428dea;
+  border-radius: 5px; }
+  @media screen and (-webkit-min-device-pixel-ratio: 2) {
+    .ui-btn2, .ui-btn-lg, .ui-btn-s {
+      position: relative;
+      border: 0; }
+      .ui-btn2:before, .ui-btn-lg:before, .ui-btn-s:before {
+        content: "";
+        width: 200%;
+        height: 200%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        border: 2px solid #cacccd;
+        -webkit-transform: scale(0.5);
+        -webkit-transform-origin: 0 0;
+        padding: 1px;
+        -webkit-box-sizing: border-box;
+        border-radius: 8px;
+        pointer-events: none; } }
+.ui-list-function .ui-btn2, .ui-list-function .ui-btn-lg, .ui-list-function .ui-btn-s {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  margin-top: -15px; }
+/**
