@@ -12,7 +12,7 @@
         var todayHour = today.getHours();
         var todayMinute = today.getMinutes();
         var todaySecond = today.getSeconds();
-        var t1 = Date.UTC(2018,06,01,00,00,00); //北京时间2018-06-1 00:00:00
+        var t1 = Date.UTC(2020,01,01,00,00,00); //北京时间2018-06-1 00:00:00
         var t2 = Date.UTC(todayYear,todayMonth,todayDate,todayHour,todayMinute,todaySecond);
         var diff = t2-t1;
         var diffYears = Math.floor(diff/years);
